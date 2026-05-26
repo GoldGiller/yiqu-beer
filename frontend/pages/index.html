@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调酒模拟器 - 创造你的专属饮品</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .preview-area {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            border: 2px dashed rgba(212, 175, 55, 0.3);
+        }
+        .mix-button {
+            background: linear-gradient(45deg, var(--accent-gold), var(--accent-copper));
+            transition: all 0.3s ease;
+            font-family: 'Noto Serif SC', serif;
+            font-weight: bold;
+        }
+        .mix-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.4);
+        }
+        .mix-button:active { transform: translateY(0); }
+    </style>
+</head>
+<body>
+    <!-- P5.js背景画布 -->
+    <div id="p5-container"></div>
+    
+    <div id="nav-container"></div>
+    
+    <!-- Hero区域 -->
+    <section class="pt-20 pb-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="hero-title text-5xl md:text-7xl font-bold mb-6 floating-animation">
+                创造你的专属饮品
+            </h1>
+            <p class="text-xl md:text-2xl mb-8" style="color: var(--text-gold);">
+                根据心情和口味，调制属于你的完美鸡尾酒
+            </p>
+        </div>
+    </section>
+    
+    <!-- 主要内容区域 -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- 左侧：材料选择 -->
+            <div class="lg:col-span-1">
+                <div class="glass-card p-6 mb-6">
+                    <h2 class="text-2xl font-bold mb-4 hero-title">选择材料</h2>
+                    
+                    <!-- 基酒选择 -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold mb-3" style="color: var(--accent-gold);">基酒</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="ingredient-card glass-card p-3 text-center" data-ingredient="vodka" data-type="base">
+                                <div class="text-2xl mb-2">🍸</div>
+                                <div class="text-sm">伏特加</div>
+                            </div>
+                            <div class="ingredient-card glass-card p-3 text-center" data-ingredient="whiskey" data-type="base">
+                                <div class="text-2xl mb-2">🥃</div>
+                                <div class="text-sm">威士忌</div>
+                            </div>
+                            <div class="ingredient-card glass-card p-3 text-center" data-ingredient="rum" data-type="base">
+                                <div class="text-2xl mb-2">🏴‍☠️</div>
+                                <div class="text-sm">朗姆酒</div>
+                            </div>
+                            <div class="ingredient-card glass-card p-3 text-center" data-ingredient="gin" data-type="base">
+                                <div class="text-2xl mb-2">🌿</div>
+                                <div class="text-sm">金酒</div>
+                            </div>
+                            <div class="ingredient-card glass-card p-3 text-center" data-ingredient="tequila" data-type="base">
+                                <div class="text-2xl mb-2">🌵</div>
+                                <div class="text-sm">龙舌兰</div>
+                            </div>
+                            <div class="ingredient-card glass-card p-3 text-center" data-ingredient="brandy" data-type="base">
+                                <div class="text-2xl mb-2">🍇</div>
+                                <div class="text-sm">白兰地</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 果汁选择 -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold mb-3" style="color: var(--accent-gold);">果汁</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="ingredient-card glass-card p-3 text-center" data-ingredient="lemon" data-type="juice">
+                                <div class="text-2xl mb-2">🍋</div>
+                                <div class="text-sm">柠檬汁</div>
+                            </div>
+                            <div class="ingredient-card glass-card p-3 text-center" data-ingredient="lime" data-type="juice">
+                                <div class="text-2xl mb-2">🟢</div>
+                                <div class="text-sm">青柠汁</div>
+                            </div>
+                            <div class="ingredient-card glass-card p-3 text-center" data-ingredient="orange" data-type="juice">
+                                <div class="text-2xl mb-2">🍊</div>
+                                <div class="text-sm">橙汁</div>
+                            </div>
+                            <div class="ingredient-card glass-card p-3 text-center" data-ingredient="grapefruit" data-type="juice">
+                                <div class="text-2xl mb-2">🌸</div>
+                                <div class="text-sm">西柚汁</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 糖浆选择 -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold mb-3" style="color: var(--accent-gold);">糖浆</h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="ingredient-card glass-card p-3 text-center" data-ingredient="simple" data-type="syrup">
+                                <div class="text-2xl mb-2">🍯</div>
+                                <div class="text-sm">简单糖浆</div>
+                            </div>
+                            <div class="ingredient-card glass-card p-3 text-center" data-ingredient="vanilla" data-type="syrup">
+                                <div class="text-2xl mb-2">🌸</div>
+                                <div class="text-sm">香草糖浆</div>
+                            </div>
+                            <div class="ingredient-card glass-card p-3 text-center" data-ingredient="hazelnut" data-type="syrup">
+                                <div class="text-2xl mb-2">🌰</div>
+                                <div class="text-sm">榛果糖浆</div>
+                            </div>
+                            <div class="ingredient-card glass-card p-3 text-center" data-ingredient="grenadine" data-type="syrup">
+                                <div class="text-2xl mb-2">🍒</div>
+                                <div class="text-sm">红石榴糖浆</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 中间：心情和口味设置 -->
+            <div class="lg:col-span-1">
+                <div class="glass-card p-6 mb-6">
+                    <h2 class="text-2xl font-bold mb-4 hero-title">选择心情</h2>
+                    
+                    <div class="grid grid-cols-2 gap-3 mb-8">
+                        <button class="mood-button glass-card p-4 text-center" data-mood="happy">
+                            <div class="text-3xl mb-2">😊</div>
+                            <div class="text-sm">开心</div>
+                        </button>
+                        <button class="mood-button glass-card p-4 text-center" data-mood="sad">
+                            <div class="text-3xl mb-2">😔</div>
+                            <div class="text-sm">失落</div>
+                        </button>
+                        <button class="mood-button glass-card p-4 text-center" data-mood="excited">
+                            <div class="text-3xl mb-2">🎉</div>
+                            <div class="text-sm">兴奋</div>
+                        </button>
+                        <button class="mood-button glass-card p-4 text-center" data-mood="romantic">
+                            <div class="text-3xl mb-2">💕</div>
+                            <div class="text-sm">浪漫</div>
+                        </button>
+                        <button class="mood-button glass-card p-4 text-center" data-mood="tired">
+                            <div class="text-3xl mb-2">😴</div>
+                            <div class="text-sm">疲惫</div>
+                        </button>
+                        <button class="mood-button glass-card p-4 text-center" data-mood="celebrating">
+                            <div class="text-3xl mb-2">🥂</div>
+                            <div class="text-sm">庆祝</div>
+                        </button>
+                    </div>
+                    
+                    <h2 class="text-2xl font-bold mb-4 hero-title">口味偏好</h2>
+                    
+                    <div class="space-y-6">
+                        <div class="slider-container">
+                            <label class="block text-sm font-medium mb-2">甜度</label>
+                            <input type="range" min="1" max="10" value="5" class="slider" id="sweetness">
+                            <div class="flex justify-between text-xs mt-1" style="color: var(--text-gold);">
+                                <span>微甜</span>
+                                <span id="sweetness-value">5</span>
+                                <span>超甜</span>
+                            </div>
+                        </div>
+                        
+                        <div class="slider-container">
+                            <label class="block text-sm font-medium mb-2">酸度</label>
+                            <input type="range" min="1" max="10" value="5" class="slider" id="sourness">
+                            <div class="flex justify-between text-xs mt-1" style="color: var(--text-gold);">
+                                <span>微酸</span>
+                                <span id="sourness-value">5</span>
+                                <span>超酸</span>
+                            </div>
+                        </div>
+                        
+                        <div class="slider-container">
+                            <label class="block text-sm font-medium mb-2">酒精浓度</label>
+                            <input type="range" min="1" max="10" value="5" class="slider" id="alcohol">
+                            <div class="flex justify-between text-xs mt-1" style="color: var(--text-gold);">
+                                <span>轻饮</span>
+                                <span id="alcohol-value">5</span>
+                                <span>烈酒</span>
+                            </div>
+                        </div>
+                        
+                        <div class="slider-container">
+                            <label class="block text-sm font-medium mb-2">果味强度</label>
+                            <input type="range" min="1" max="10" value="5" class="slider" id="fruitiness">
+                            <div class="flex justify-between text-xs mt-1" style="color: var(--text-gold);">
+                                <span>淡雅</span>
+                                <span id="fruitiness-value">5</span>
+                                <span>浓郁</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 调酒按钮 -->
+                    <button id="mix-button" class="mix-button w-full mt-8 py-4 px-6 rounded-lg text-lg font-bold" style="color: var(--primary-dark);">
+                        🍸 开始调酒 ✨
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 右侧：预览区域 -->
+            <div class="lg:col-span-1">
+                <div class="glass-card p-6">
+                    <h2 class="text-2xl font-bold mb-4 hero-title">调酒预览</h2>
+                    
+                    <div class="preview-area p-6 mb-6">
+                        <div id="preview-content" class="text-center">
+                            <div class="text-6xl mb-4">🍸</div>
+                            <p class="text-lg mb-2">选择材料和心情</p>
+                            <p class="text-sm" style="color: var(--text-gold);">开始创造你的专属饮品</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold" style="color: var(--accent-gold);">已选材料</h3>
+                        <div id="selected-ingredients" class="space-y-2">
+                            <div class="text-sm" style="color: var(--text-gold);">暂无选择</div>
+                        </div>
+                        
+                        <h3 class="text-lg font-semibold" style="color: var(--accent-gold);">当前心情</h3>
+                        <div id="current-mood" class="text-sm" style="color: var(--text-gold);">未选择</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div id="chat-widget-container"></div>
+    <script src="../js/core/api-client.js"></script>
+    <script src="../js/ui/nav-bar.js"></script>
+    <script src="../js/app/main.js"></script>
+    <script src="../js/ui/chat-widget.js"></script>
+</body>
+</html>

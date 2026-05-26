@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 调酒模拟器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .tab-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            padding: 12px 24px;
+            color: var(--text-gold);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            background: linear-gradient(45deg, var(--accent-gold), var(--accent-copper));
+            color: var(--primary-dark);
+            font-weight: bold;
+        }
+        .tab-button:first-child { border-radius: 8px 0 0 8px; }
+        .tab-button:last-child { border-radius: 0 8px 8px 0; }
+    </style>
+</head>
+<body>
+    <!-- P5.js背景画布 -->
+    <div id="p5-container"></div>
+    
+    <!-- 主要内容 -->
+    <main class="min-h-screen flex items-center justify-center px-4 py-8">
+        <div class="w-full max-w-md">
+            <!-- Logo和标题 -->
+            <div class="text-center mb-8">
+                <div class="text-6xl mb-4 floating-animation">🍸</div>
+                <h1 class="hero-title text-4xl md:text-5xl font-bold mb-2">
+                    意趣调酒平台
+                </h1>
+                <p class="text-lg" style="color: var(--text-gold);">
+                    创造你的专属饮品
+                </p>
+            </div>
+            
+            <!-- 登录/注册卡片 -->
+            <div class="glass-card p-8">
+                <!-- 标签页 -->
+                <div class="flex mb-6">
+                    <button id="login-tab" class="tab-button active flex-1">登录</button>
+                    <button id="register-tab" class="tab-button flex-1">注册</button>
+                </div>
+                
+                <!-- 登录表单 -->
+                <form id="login-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--accent-gold);">
+                            用户名或邮箱
+                        </label>
+                        <input type="text" id="login-username" class="auth-input" 
+                               placeholder="请输入用户名或邮箱" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--accent-gold);">
+                            密码
+                        </label>
+                        <input type="password" id="login-password" class="auth-input" 
+                               placeholder="请输入密码" required>
+                        <div class="text-right mt-2">
+                            <a href="#" class="auth-link text-sm">忘记密码？</a>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="auth-button">登录</button>
+                    
+                    <div id="login-message"></div>
+                </form>
+                
+                <!-- 注册表单 -->
+                <form id="register-form" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--accent-gold);">
+                            用户名
+                        </label>
+                        <input type="text" id="register-username" class="auth-input" 
+                               placeholder="请输入用户名" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--accent-gold);">
+                            邮箱
+                        </label>
+                        <input type="email" id="register-email" class="auth-input" 
+                               placeholder="请输入邮箱" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--accent-gold);">
+                            密码
+                        </label>
+                        <input type="password" id="register-password" class="auth-input" 
+                               placeholder="请输入密码（至少6位）" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--accent-gold);">
+                            确认密码
+                        </label>
+                        <input type="password" id="register-confirm-password" class="auth-input" 
+                               placeholder="请再次输入密码" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--accent-gold);">
+                            昵称（可选）
+                        </label>
+                        <input type="text" id="register-nickname" class="auth-input" 
+                               placeholder="请输入昵称">
+                    </div>
+                    
+                    <button type="submit" class="auth-button">注册</button>
+                    
+                    <div id="register-message"></div>
+                </form>
+                
+                <!-- 游客访问 -->
+                <div class="mt-6 text-center">
+                    <p class="text-sm mb-2" style="color: var(--text-gold);">
+                        想先体验一下？
+                    </p>
+                    <button id="guest-login" class="auth-link text-sm">
+                        以游客身份进入
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 页脚 -->
+            <div class="text-center mt-6">
+                <p class="text-sm" style="color: var(--text-gold);">
+                    © 2024 调酒模拟器 | 创造你的专属饮品
+                </p>
+            </div>
+        </div>
+    </main>
+    
+    <script src="../js/core/api-client.js"></script>
+    <script src="../js/core/auth.js"></script>
+</body>
+</html>

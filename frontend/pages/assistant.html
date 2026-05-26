@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI调酒助手 - 意趣调酒平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .chat-bubble-user {
+            background: rgba(212, 175, 55, 0.2);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 16px 16px 4px 16px;
+        }
+        .chat-bubble-bot {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px 16px 16px 4px;
+        }
+        #chat-area {
+            scroll-behavior: smooth;
+        }
+        #chat-area::-webkit-scrollbar { width: 4px; }
+        #chat-area::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 2px; }
+    </style>
+</head>
+<body>
+    <div id="nav-container"></div>
+
+    <main class="pt-20 pb-8 min-h-screen flex flex-col">
+        <div class="max-w-3xl mx-auto px-4 w-full flex-1 flex flex-col">
+            <!-- 标题 -->
+            <div class="text-center mb-6">
+                <h1 class="hero-title text-4xl font-bold mb-2">🤖 AI 调酒助手</h1>
+                <p class="text-sm" style="color: var(--text-gold);">
+                    你的专属鸡尾酒顾问 — 随时为你推荐、解答、搭配
+                </p>
+            </div>
+
+            <!-- 快捷建议 -->
+            <div class="glass-card p-4 mb-4">
+                <p class="text-xs mb-3" style="color: var(--text-gold);">💡 试试这些问题：</p>
+                <div class="flex flex-wrap gap-2" id="suggestion-chips">
+                    <button class="suggestion-chip text-xs px-3 py-1.5 rounded-full transition" data-text="推荐一杯夏日清爽饮品"
+                        style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:var(--text-gold);">
+                        🍹 推荐一杯夏日清爽饮品
+                    </button>
+                    <button class="suggestion-chip text-xs px-3 py-1.5 rounded-full transition" data-text="我今天心情好，推荐什么？"
+                        style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:var(--text-gold);">
+                        😊 我今天心情好，推荐什么？
+                    </button>
+                    <button class="suggestion-chip text-xs px-3 py-1.5 rounded-full transition" data-text="适合晚上喝的鸡尾酒有哪些"
+                        style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:var(--text-gold);">
+                        🌙 适合晚上喝的鸡尾酒
+                    </button>
+                    <button class="suggestion-chip text-xs px-3 py-1.5 rounded-full transition" data-text="莫吉托怎么做？"
+                        style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:var(--text-gold);">
+                        🍃 莫吉托怎么做？
+                    </button>
+                    <button class="suggestion-chip text-xs px-3 py-1.5 rounded-full transition" data-text="帮我搭配一些小吃"
+                        style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:var(--text-gold);">
+                        🍽️ 帮我搭配一些小吃
+                    </button>
+                    <button class="suggestion-chip text-xs px-3 py-1.5 rounded-full transition" data-text="冬天适合喝什么暖暖的鸡尾酒"
+                        style="background:rgba(212,175,55,0.1); border:1px solid rgba(212,175,55,0.3); color:var(--text-gold);">
+                        🔥 冬天适合喝什么暖暖的
+                    </button>
+                </div>
+            </div>
+
+            <!-- 聊天区域 -->
+            <div class="glass-card flex-1 flex flex-col" style="min-height: 400px; max-height: 60vh;">
+                <div id="chat-area" class="flex-1 overflow-y-auto p-6 space-y-4">
+                    <div class="flex justify-start">
+                        <div class="chat-bubble-bot max-w-[80%] px-4 py-3">
+                            <p class="text-sm">👋 你好！我是你的AI调酒助手。</p>
+                            <p class="text-sm mt-1">我可以帮你：</p>
+                            <ul class="text-sm mt-2 space-y-1" style="color: var(--text-gold);">
+                                <li>🍸 根据心情和口味推荐鸡尾酒</li>
+                                <li>📝 解答调酒知识疑问</li>
+                                <li>🍽️ 推荐食物搭配方案</li>
+                                <li>📖 介绍经典鸡尾酒配方</li>
+                            </ul>
+                            <p class="text-sm mt-2">直接告诉我你的需求吧！</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 输入区域 -->
+                <div class="flex items-center gap-3 p-4" style="border-top: 1px solid rgba(212,175,55,0.15);">
+                    <textarea id="chat-input" rows="1" placeholder="输入你的调酒相关问题..."
+                        class="flex-1 text-sm rounded-lg px-4 py-3 outline-none resize-none"
+                        style="background:rgba(255,255,255,0.1); border:1px solid rgba(212,175,55,0.3); color:var(--text-light);"
+                    ></textarea>
+                    <button id="chat-send" class="px-5 py-3 rounded-lg font-semibold transition text-sm flex-shrink-0"
+                        style="background:linear-gradient(45deg, var(--accent-gold), var(--accent-copper)); color:var(--primary-dark);">
+                        📤 发送
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../js/core/api-client.js"></script>
+    <script src="../js/ui/nav-bar.js"></script>
+    <script>
+    class FullChatAssistant {
+        constructor() {
+            this.messages = this.loadHistory();
+            this.init();
+        }
+
+        loadHistory() {
+            try {
+                const h = localStorage.getItem('ai_chat_history');
+                return h ? JSON.parse(h) : [];
+            } catch { return []; }
+        }
+
+        saveHistory() {
+            if (this.messages.length > 50) this.messages = this.messages.slice(-50);
+            localStorage.setItem('ai_chat_history', JSON.stringify(this.messages));
+        }
+
+        init() {
+            this.area = document.getElementById('chat-area');
+            this.input = document.getElementById('chat-input');
+            this.sendBtn = document.getElementById('chat-send');
+
+            this.sendBtn.addEventListener('click', () => this.send());
+            this.input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.send();
+                }
+            });
+
+            // 自动调整输入框高度
+            this.input.addEventListener('input', () => {
+                this.input.style.height = 'auto';
+                this.input.style.height = Math.min(this.input.scrollHeight, 120) + 'px';
+            });
+
+            document.querySelectorAll('.suggestion-chip').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    this.input.value = btn.dataset.text;
+                    this.send();
+                });
+            });
+        }
+
+        renderContent(text) {
+            return text
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+        }
+
+        addBubble(role, content) {
+            const div = document.createElement('div');
+            div.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            div.innerHTML = `<div class="${role === 'user' ? 'chat-bubble-user' : 'chat-bubble-bot'} max-w-[80%] px-4 py-3 text-sm">${this.renderContent(content)}</div>`;
+            this.area.appendChild(div);
+            this.area.scrollTop = this.area.scrollHeight;
+            return div;
+        }
+
+        async send() {
+            const text = this.input.value.trim();
+            if (!text) return;
+
+            this.input.value = '';
+            this.input.style.height = 'auto';
+            this.addBubble('user', text);
+            this.messages.push({ role: 'user', content: text });
+
+            const loadingBubble = this.addBubble('assistant', '正在思考中...');
+
+            try {
+                const apiMessages = [
+                    { role: 'system', content: '你是意趣调酒平台的AI助手，是一位资深调酒师。用中文热情回答用户关于鸡尾酒的问题。回复中使用适当的emoji，但不要过度。' },
+                    ...this.messages.filter(m => m.content !== '正在思考中...').slice(-20)
+                        .map(m => ({ role: m.role, content: m.content }))
+                ];
+
+                const response = await fetch('/ai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: apiMessages, stream: true })
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullContent = '', buffer = '';
+
+                loadingBubble.querySelector('div').textContent = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6).trim();
+                            if (data === '[DONE]') continue;
+                            try {
+                                const json = JSON.parse(data);
+                                const c = json.choices?.[0]?.delta?.content || '';
+                                if (c) {
+                                    fullContent += c;
+                                    loadingBubble.querySelector('div').innerHTML = this.renderContent(fullContent);
+                                    this.area.scrollTop = this.area.scrollHeight;
+                                }
+                            } catch {}
+                        }
+                    }
+                }
+
+                if (fullContent) {
+                    this.messages.push({ role: 'assistant', content: fullContent });
+                } else {
+                    loadingBubble.querySelector('div').textContent = '抱歉，AI助手暂时无法回复，请稍后再试。';
+                    this.messages.push({ role: 'assistant', content: '抱歉，AI助手暂时无法回复。' });
+                }
+            } catch (e) {
+                console.error('Chat error:', e);
+                loadingBubble.querySelector('div').textContent = '抱歉，连接AI助手失败，请检查网络后重试。';
+                this.messages.push({ role: 'assistant', content: '抱歉，连接AI助手失败。' });
+            }
+            this.saveHistory();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => new FullChatAssistant());
+    </script>
+</body>
+</html>

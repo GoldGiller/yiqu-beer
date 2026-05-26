@@ -1,0 +1,257 @@
+# Spring Boot 配置文件
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# 应用信息
+# 数据库配置
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/cocktail_maker?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:cocktail_user}
+    password: ${DB_PASSWORD:cocktail_password}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # JPA配置
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        connection:
+          provider_disables_autocommit: true
+
+  # Redis配置
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 0
+      timeout: 5000ms
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 0
+          max-wait: 1000ms
+
+  # 邮件配置
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+      file-size-threshold: 2MB
+      
+  # 缓存配置
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000 # 1 hour
+      cache-null-values: false
+      use-key-prefix: true
+      key-prefix: cocktail
+
+  # 异步配置
+  task:
+    execution:
+      pool:
+        core-size: 8
+        max-size: 16
+        queue-capacity: 100
+        keep-alive: 60s
+    scheduling:
+      pool:
+        size: 4
+
+# 日志配置
+logging:
+  level:
+    com.cocktailmaker: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%logger{50}] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%logger{50}] - %msg%n"
+  file:
+    name: logs/cocktail-maker.log
+    max-size: 100MB
+    max-history: 30
+
+# JWT配置
+jwt:
+  secret: ${JWT_SECRET:cocktail-maker-secret-key-2024-please-change-this-in-production}
+  expiration: 86400000 # 24 hours
+  refresh-expiration: 604800000 # 7 days
+  issuer: cocktail-maker
+
+# 安全配置
+security:
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:8080}
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true
+  
+  # 密码加密配置
+  password:
+    bcrypt:
+      strength: 12
+
+# 监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+# 应用自定义配置
+app:
+  # 文件存储配置
+  storage:
+    type: local # local, s3, oss
+    local:
+      path: ${STORAGE_PATH:./uploads}
+      url-prefix: ${STORAGE_URL_PREFIX:http://localhost:8080/api/uploads/}
+    
+  # 图片处理配置
+  image:
+    thumbnail:
+      width: 300
+      height: 300
+    compression:
+      quality: 0.8
+    formats: jpg,jpeg,png,gif,webp
+    max-size: 5242880 # 5MB
+  
+  # 配方配置
+  recipe:
+    max-per-user: 100
+    max-ingredients: 20
+    max-steps: 20
+    default-visibility: public
+  
+  # 分页配置
+  pagination:
+    default-page-size: 20
+    max-page-size: 100
+  
+  # 验证码配置
+  verification:
+    code-length: 6
+    expiration-minutes: 15
+    max-attempts: 5
+  
+  # 社交功能配置
+  social:
+    enable-comments: true
+    enable-ratings: true
+    enable-sharing: true
+    enable-favorites: true
+  
+  # 推荐算法配置
+  recommendation:
+    algorithm: collaborative # collaborative, content-based, hybrid
+    max-recommendations: 10
+    update-interval: 3600 # seconds
+
+---
+# 开发环境配置
+spring:
+  config:
+    activate:
+      on-profile: dev
+  
+  datasource:
+    url: jdbc:mysql://localhost:3306/cocktail_maker?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    username: root
+    password: root123
+  
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+  
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+logging:
+  level:
+    com.cocktailmaker: DEBUG
+    org.springframework.security: DEBUG
+
+---
+# 生产环境配置
+spring:
+  config:
+    activate:
+      on-profile: prod
+  
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:cocktail_maker}?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=GMT%2B8
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+  
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+logging:
+  level:
+    com.cocktailmaker: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+  file:
+    name: /var/log/cocktail-maker/cocktail-maker.log

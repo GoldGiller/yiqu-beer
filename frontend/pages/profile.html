@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人主页 - 调酒模拟器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div id="nav-container"></div>
+
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        <!-- 用户头部卡片 -->
+        <div class="glass-card p-8 mb-8">
+            <div class="flex flex-col md:flex-row items-center gap-6">
+                <div class="w-24 h-24 rounded-full bg-amber-900/30 flex items-center justify-center text-4xl border-2 border-amber-600/30" id="profile-avatar">
+                    👤
+                </div>
+                <div class="flex-1 text-center md:text-left">
+                    <h1 class="text-3xl font-bold text-amber-200" id="profile-name">加载中...</h1>
+                    <p class="text-gray-400 mt-1" id="profile-bio"></p>
+                    <p class="text-gray-500 text-sm mt-1" id="profile-location"></p>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-recipes">0</div>
+                        <div class="text-xs text-gray-400 mt-1">配方</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-likes">0</div>
+                        <div class="text-xs text-gray-400 mt-1">获赞</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="stat-views">0</div>
+                        <div class="text-xs text-gray-400 mt-1">浏览</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 左侧: 风味雷达图 -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-semibold text-amber-300 mb-4">🎯 风味雷达图</h3>
+                    <div id="radar-chart" style="width:100%;height:320px;"></div>
+                    <div id="flavor-info" class="mt-4 text-center"></div>
+                </div>
+
+                <!-- 风味分布 -->
+                <div class="glass-card p-6" id="flavor-distribution"></div>
+
+                <!-- 快捷操作 -->
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-semibold text-amber-300 mb-4">⚡ 快捷操作</h3>
+                    <div class="space-y-3">
+                        <a href="index.html" class="block w-full py-3 text-center bg-amber-700/30 hover:bg-amber-600/50 border border-amber-600/30 rounded-lg transition text-sm">
+                            🍸 调制新配方
+                        </a>
+                        <a href="recipes.html" class="block w-full py-3 text-center bg-gray-700/30 hover:bg-gray-600/50 border border-gray-600/30 rounded-lg transition text-sm">
+                            📖 浏览配方库
+                        </a>
+                        <button id="btn-import" class="w-full py-3 bg-gray-700/30 hover:bg-gray-600/50 border border-gray-600/30 rounded-lg transition text-sm">
+                            📥 导入配方JSON
+                        </button>
+                        <input type="file" id="import-file" accept=".json" class="hidden">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧: Tab切换 -->
+            <div class="lg:col-span-2">
+                <div class="flex gap-2 mb-6">
+                    <button class="tab-btn active px-6 py-2 rounded-lg text-sm transition" data-tab="recipes">我的配方</button>
+                    <button class="tab-btn px-6 py-2 rounded-lg text-sm transition bg-gray-700/30" data-tab="activities">动态流</button>
+                    <button class="tab-btn px-6 py-2 rounded-lg text-sm transition bg-gray-700/30" data-tab="recommendations">为你推荐</button>
+                </div>
+
+                <!-- 我的配方 (瀑布流) -->
+                <div id="tab-recipes" class="tab-content">
+                    <div class="waterfall" id="recipe-wall"></div>
+                </div>
+
+                <!-- 动态流 -->
+                <div id="tab-activities" class="tab-content hidden">
+                    <div class="glass-card p-6">
+                        <div id="activity-feed" class="space-y-2"></div>
+                    </div>
+                </div>
+
+                <!-- 为你推荐 -->
+                <div id="tab-recommendations" class="tab-content hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- 协同推荐 -->
+                        <div class="glass-card p-6">
+                            <h4 class="font-semibold text-amber-300 mb-4">🤝 与你口味相似</h4>
+                            <div id="collab-recipes" class="space-y-3"></div>
+                        </div>
+                        <!-- 季节推荐 -->
+                        <div class="glass-card p-6">
+                            <h4 class="font-semibold text-amber-300 mb-4" id="seasonal-title">🌸 应季推荐</h4>
+                            <div id="seasonal-recipes" class="space-y-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../js/core/api-client.js"></script>
+    <script src="../js/features/flavor-chart.js"></script>
+    <script src="../js/features/recipe-toolkit.js"></script>
+    <script src="../js/ui/nav-bar.js"></script>
+    <script src="../js/ui/chat-widget.js"></script>
+    <script>
+    const userId = apiClient.getCurrentUserId() || '1';
+    const flavorChart = new FlavorChart('radar-chart');
+
+    let profileData = null;
+
+    async function init() {
+        try {
+            const resp = await apiClient.getUserProfile(userId);
+            if (resp.success) {
+                profileData = resp.data;
+                renderProfile(profileData);
+            }
+        } catch (e) {
+            document.getElementById('profile-name').textContent = '加载失败';
+        }
+
+        flavorChart.load(userId);
+        loadActivities();
+        loadRecommendations();
+    }
+
+    function renderProfile(data) {
+        document.getElementById('profile-name').textContent = data.nickname || data.username;
+        document.getElementById('profile-bio').textContent = data.bio || '';
+        document.getElementById('profile-location').textContent = data.location ? '📍 ' + data.location : '';
+        document.getElementById('stat-recipes').textContent = data.recipeCount || 0;
+        document.getElementById('stat-views').textContent = data.totalViews || 0;
+
+        if (data.avatar) {
+            document.getElementById('profile-avatar').innerHTML = `<img src="${data.avatar}" class="w-full h-full rounded-full object-cover">`;
+        }
+
+        // 风味分布
+        if (data.avgSweetness != null) {
+            document.getElementById('flavor-distribution').innerHTML = `
+                <h3 class="text-lg font-semibold text-amber-300 mb-4">📊 风味偏好</h3>
+                ${renderFlavorBar('甜度', data.avgSweetness)}
+                ${renderFlavorBar('酸度', data.avgSourness)}
+                ${renderFlavorBar('酒精度', data.avgAlcohol)}
+                ${renderFlavorBar('果味', data.avgFruitiness)}
+            `;
+        }
+
+        // 瀑布流配方墙
+        if (data.recentRecipes && data.recentRecipes.length > 0) {
+            document.getElementById('recipe-wall').innerHTML = data.recentRecipes.map(r => `
+                <a href="recipe-detail.html?id=${r.id}" class="recipe-card block p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-2xl">🍸</span>
+                        <h4 class="font-medium text-amber-200 truncate">${r.name}</h4>
+                    </div>
+                    ${r.mood ? `<span class="inline-block px-2 py-0.5 bg-amber-900/30 text-amber-400 rounded text-xs">${r.mood}</span>` : ''}
+                    <div class="flex gap-3 mt-2 text-xs text-gray-400">
+                        <span>❤️ ${r.likeCount || 0}</span>
+                        <span>👁️ ${r.viewCount || 0}</span>
+                    </div>
+                </a>`).join('');
+        } else {
+            document.getElementById('recipe-wall').innerHTML = '<p class="text-gray-500 text-center py-8">还没有配方，去<a href="index.html" class="text-amber-400">调一杯</a>吧！</p>';
+        }
+    }
+
+    function renderFlavorBar(label, value) {
+        const v = value || 0;
+        return `
+            <div class="mb-3">
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-300">${label}</span>
+                    <span class="text-amber-400">${v.toFixed(1)}/10</span>
+                </div>
+                <div class="h-2 bg-gray-700/50 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full" style="width:${v * 10}%;background:linear-gradient(90deg,#d4af37,#b87333);"></div>
+                </div>
+            </div>`;
+    }
+
+    async function loadActivities() {
+        try {
+            const resp = await apiClient.getUserActivities(userId, 0, 20);
+            const container = document.getElementById('activity-feed');
+            if (resp.success && resp.data && resp.data.content && resp.data.content.length > 0) {
+                container.innerHTML = resp.data.content.map(a => `
+                    <div class="activity-item">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-lg">${a.activityIcon || '📌'}</span>
+                            <span class="text-gray-200 text-sm">${a.summary || a.activityType}</span>
+                        </div>
+                        <span class="text-gray-500 text-xs">${formatTime(a.createdAt)}</span>
+                    </div>`).join('');
+            } else {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">暂无活动记录</p>';
+            }
+        } catch (e) {}
+    }
+
+    async function loadRecommendations() {
+        try {
+            const [collabResp, seasonalResp] = await Promise.all([
+                apiClient.getCollaborativeRecommendations(5),
+                apiClient.getSeasonalRecommendations(5)
+            ]);
+
+            if (collabResp.success && collabResp.data) {
+                document.getElementById('collab-recipes').innerHTML = renderMiniRecipes(collabResp.data.recipes);
+            }
+
+            if (seasonalResp.success && seasonalResp.data) {
+                document.getElementById('seasonal-title').textContent =
+                    `${seasonalResp.data.seasonEmoji || '🌸'} ${seasonalResp.data.reason || '应季推荐'}`;
+                document.getElementById('seasonal-recipes').innerHTML = renderMiniRecipes(seasonalResp.data.recipes);
+            }
+        } catch (e) {}
+    }
+
+    function renderMiniRecipes(recipes) {
+        if (!recipes || recipes.length === 0) {
+            return '<p class="text-gray-500 text-sm text-center py-4">暂无推荐</p>';
+        }
+        return recipes.map(r => `
+            <a href="recipe-detail.html?id=${r.id}" class="flex items-center gap-3 p-3 hover:bg-white/5 rounded-lg transition block">
+                <span class="text-2xl">🍸</span>
+                <div class="flex-1 min-w-0">
+                    <p class="text-gray-200 text-sm truncate">${r.name}</p>
+                    <p class="text-gray-500 text-xs">❤️ ${r.likeCount || 0} · 👁️ ${r.viewCount || 0}</p>
+                </div>
+            </a>`).join('');
+    }
+
+    function formatTime(dateStr) {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        const now = new Date();
+        const diff = now - d;
+        if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+        if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+        if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
+        return d.toLocaleDateString('zh-CN');
+    }
+
+    // Tab 切换
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('active');
+                b.classList.add('bg-gray-700/30');
+            });
+            btn.classList.remove('bg-gray-700/30');
+            btn.classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById('tab-' + btn.dataset.tab).classList.remove('hidden');
+        });
+    });
+
+    // 导入配方
+    document.getElementById('btn-import').addEventListener('click', () => {
+        document.getElementById('import-file').click();
+    });
+
+    document.getElementById('import-file').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+            const data = await RecipeToolkit.importFromFile(file);
+            const resp = await apiClient.importRecipe(data);
+            if (resp.success) {
+                alert('配方导入成功！');
+                window.location.href = `recipe-detail.html?id=${resp.data.id}`;
+            } else {
+                alert(resp.message || '导入失败');
+            }
+        } catch (err) {
+            alert(err.message || '导入失败');
+        }
+    });
+
+    init();
+    </script>
+</body>
+</html>
