@@ -185,7 +185,7 @@ SELECT * FROM comment_tree ORDER BY path;
 
 1. **克隆项目**
 ```bash
-git clone https://github.com/yourusername/cocktail-maker.git
+git clone https://github.com/GoldGiller/yiqu-beer.git
 cd cocktail-maker
 ```
 
@@ -410,9 +410,9 @@ npm test
 
 ## 📞 联系方式
 
-- **项目维护者**: [Your Name]
-- **邮箱**: [your.email@example.com]
-- **GitHub**: https://github.com/yourusername/cocktail-maker
+- **项目维护者**: [GoldGiller]
+- **邮箱**: [1755373406@QQ.com]
+- **GitHub**: https://github.com/GoldGiller/
 
 ## 🙏 致谢
 
