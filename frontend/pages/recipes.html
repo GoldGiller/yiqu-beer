@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>配方库 - 我的调酒收藏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <script src="../js/core/api-client.js"></script>
+    <script src="../js/features/recipe-toolkit.js"></script>
+    <script src="../js/ui/nav-bar.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .delete-button {
+            background: rgba(239, 68, 68, 0.8);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .delete-button:hover {
+            background: rgba(239, 68, 68, 1);
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- P5.js背景画布 -->
+    <div id="p5-container"></div>
+    
+    <div id="nav-container"></div>
+    
+    <!-- 主要内容 -->
+    <main class="pt-20 pb-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <!-- 页面标题 -->
+            <div class="text-center mb-12">
+                <h1 class="hero-title text-4xl md:text-6xl font-bold mb-4 floating-animation">
+                    我的配方库
+                </h1>
+                <p class="text-xl" style="color: var(--text-gold);">
+                    收藏你创造的所有美味饮品
+                </p>
+            </div>
+            
+            <!-- 统计信息 -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="stats-card">
+                    <div class="text-2xl font-bold hero-title" id="total-recipes">0</div>
+                    <div class="text-sm" style="color: var(--text-gold);">总配方数</div>
+                </div>
+                <div class="stats-card">
+                    <div class="text-2xl font-bold hero-title" id="favorite-mood">-</div>
+                    <div class="text-sm" style="color: var(--text-gold);">最爱心情</div>
+                </div>
+                <div class="stats-card">
+                    <div class="text-2xl font-bold hero-title" id="favorite-base">-</div>
+                    <div class="text-sm" style="color: var(--text-gold);">常用基酒</div>
+                </div>
+                <div class="stats-card">
+                    <div class="text-2xl font-bold hero-title" id="this-month">0</div>
+                    <div class="text-sm" style="color: var(--text-gold);">本月新增</div>
+                </div>
+            </div>
+            
+            <!-- 搜索和筛选 -->
+            <div class="glass-card p-6 mb-8">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- 搜索框 -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--accent-gold);">搜索配方</label>
+                        <input type="text" id="search-input" class="search-input" 
+                               placeholder="输入配方名称或材料...">
+                    </div>
+                    
+                    <!-- 心情筛选 -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--accent-gold);">按心情筛选</label>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="filter-button px-3 py-2 rounded-md text-sm active" data-filter="all">
+                                全部
+                            </button>
+                            <button class="filter-button px-3 py-2 rounded-md text-sm" data-filter="happy">
+                                😊 开心
+                            </button>
+                            <button class="filter-button px-3 py-2 rounded-md text-sm" data-filter="romantic">
+                                💕 浪漫
+                            </button>
+                            <button class="filter-button px-3 py-2 rounded-md text-sm" data-filter="excited">
+                                🎉 兴奋
+                            </button>
+                            <button class="filter-button px-3 py-2 rounded-md text-sm" data-filter="celebrating">
+                                🥂 庆祝
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 排序选项 -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2" style="color: var(--accent-gold);">排序方式</label>
+                        <select id="sort-select" class="search-input">
+                            <option value="newest">最新创建</option>
+                            <option value="oldest">最旧创建</option>
+                            <option value="name">按名称排序</option>
+                            <option value="mood">按心情排序</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-4">
+                    <button id="btn-import-json" class="filter-button px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+                        📥 导入JSON配方
+                    </button>
+                    <input type="file" id="import-file-input" accept=".json" class="hidden">
+                    <button id="btn-export-all" class="filter-button px-4 py-2 rounded-lg text-sm flex items-center gap-2">
+                        📤 导出全部
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 配方网格 -->
+            <div id="recipes-container">
+                <!-- 动态生成配方卡片 -->
+            </div>
+            
+            <!-- 空状态 -->
+            <div id="empty-state" class="empty-state hidden">
+                <div class="empty-state-icon">🍸</div>
+                <h3 class="text-xl font-bold mb-2">还没有配方</h3>
+                <p class="mb-6">开始创造你的第一杯专属饮品吧！</p>
+                <a href="index.html" class="inline-block px-6 py-3 rounded-lg action-button" style="background: linear-gradient(45deg, var(--accent-gold), var(--accent-copper)); color: var(--primary-dark);">
+                    开始调酒
+                </a>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        // 配方库页面逻辑
+        class RecipeLibrary {
+            constructor() {
+                this.recipes = [];
+                this.filteredRecipes = [];
+                this.currentFilter = 'all';
+                this.currentSort = 'newest';
+                this.searchQuery = '';
+                
+                this.init();
+            }
+            
+            init() {
+                this.loadRecipes();
+                this.setupEventListeners();
+                this.setupP5Background();
+                this.updateStats();
+                this.renderRecipes();
+            }
+            
+            loadRecipes() {
+                const savedRecipes = localStorage.getItem('cocktailRecipes');
+                this.recipes = savedRecipes ? JSON.parse(savedRecipes) : [];
+                this.filteredRecipes = [...this.recipes];
+            }
+            
+            setupEventListeners() {
+                // 搜索输入
+                document.getElementById('search-input').addEventListener('input', (e) => {
+                    this.searchQuery = e.target.value.toLowerCase();
+                    this.filterAndSortRecipes();
+                });
+                
+                // 心情筛选
+                document.querySelectorAll('[data-filter]').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        // 更新按钮状态
+                        document.querySelectorAll('[data-filter]').forEach(b => {
+                            b.classList.remove('active');
+                        });
+                        e.target.classList.add('active');
+                        
+                        this.currentFilter = e.target.dataset.filter;
+                        this.filterAndSortRecipes();
+                    });
+                });
+                
+                // 排序选择
+                document.getElementById('sort-select').addEventListener('change', (e) => {
+                    this.currentSort = e.target.value;
+                    this.filterAndSortRecipes();
+                });
+            }
+            
+            filterAndSortRecipes() {
+                // 筛选
+                this.filteredRecipes = this.recipes.filter(recipe => {
+                    // 心情筛选
+                    if (this.currentFilter !== 'all' && recipe.mood !== this.currentFilter) {
+                        return false;
+                    }
+                    
+                    // 搜索筛选
+                    if (this.searchQuery) {
+                        const searchText = `${recipe.name} ${recipe.description}`.toLowerCase();
+                        const ingredientsText = recipe.ingredients.map(i => i.name).join(' ').toLowerCase();
+                        
+                        if (!searchText.includes(this.searchQuery) && !ingredientsText.includes(this.searchQuery)) {
+                            return false;
+                        }
+                    }
+                    
+                    return true;
+                });
+                
+                // 排序
+                this.filteredRecipes.sort((a, b) => {
+                    switch (this.currentSort) {
+                        case 'newest':
+                            return new Date(b.createdAt) - new Date(a.createdAt);
+                        case 'oldest':
+                            return new Date(a.createdAt) - new Date(b.createdAt);
+                        case 'name':
+                            return a.name.localeCompare(b.name);
+                        case 'mood':
+                            return a.mood.localeCompare(b.mood);
+                        default:
+                            return 0;
+                    }
+                });
+                
+                this.renderRecipes();
+            }
+            
+            renderRecipes() {
+                const container = document.getElementById('recipes-container');
+                const emptyState = document.getElementById('empty-state');
+                
+                if (this.filteredRecipes.length === 0) {
+                    container.innerHTML = '';
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+                
+                emptyState.classList.add('hidden');
+                container.innerHTML = '';
+                
+                // 创建网格布局
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+                
+                this.filteredRecipes.forEach((recipe, index) => {
+                    const card = this.createRecipeCard(recipe, index);
+                    grid.appendChild(card);
+                });
+                
+                container.appendChild(grid);
+                
+                // 添加动画
+                this.addCardAnimations();
+            }
+            
+            createRecipeCard(recipe, index) {
+                const card = document.createElement('div');
+                card.className = 'recipe-card';
+                
+                const moodInfo = this.getMoodInfo(recipe.mood);
+                const createdDate = new Date(recipe.createdAt).toLocaleDateString('zh-CN');
+                
+                card.innerHTML = `
+                    <img src="${recipe.image}" alt="${recipe.name}" class="recipe-image">
+                    <div class="p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-lg font-bold text-white">${recipe.name}</h3>
+                            <button class="delete-button" onclick="recipeLibrary.deleteRecipe('${recipe.id}')">
+                                删除
+                            </button>
+                        </div>
+                        <p class="text-sm mb-3" style="color: var(--text-gold);">
+                            ${recipe.description.substring(0, 60)}...
+                        </p>
+                        <div class="flex justify-between items-center mb-3">
+                            <div class="mood-badge">${moodInfo.name}</div>
+                            <div class="text-xs" style="color: var(--text-gold);">${createdDate}</div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-xs" style="color: var(--text-gold);">
+                                ${recipe.ingredients.length} 种材料
+                            </div>
+                            <button class="text-xs px-3 py-1 rounded" 
+                                    style="background: var(--accent-gold); color: var(--primary-dark);"
+                                    onclick="recipeLibrary.viewRecipe('${recipe.id}')">
+                                查看详情
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                return card;
+            }
+            
+            getMoodInfo(mood) {
+                const moodMap = {
+                    happy: { emoji: '😊', name: '开心' },
+                    sad: { emoji: '😔', name: '失落' },
+                    excited: { emoji: '🎉', name: '兴奋' },
+                    romantic: { emoji: '💕', name: '浪漫' },
+                    tired: { emoji: '😴', name: '疲惫' },
+                    celebrating: { emoji: '🥂', name: '庆祝' }
+                };
+                return moodMap[mood] || { emoji: '🍸', name: '未知' };
+            }
+            
+            addCardAnimations() {
+                const cards = document.querySelectorAll('.recipe-card');
+                cards.forEach((card, index) => {
+                    anime({
+                        targets: card,
+                        translateY: [50, 0],
+                        opacity: [0, 1],
+                        duration: 600,
+                        delay: index * 100,
+                        easing: 'easeOutQuad'
+                    });
+                });
+            }
+            
+            deleteRecipe(recipeId) {
+                if (confirm('确定要删除这个配方吗？')) {
+                    // 从数组中移除
+                    this.recipes = this.recipes.filter(recipe => recipe.id !== recipeId);
+                    
+                    // 更新本地存储
+                    localStorage.setItem('cocktailRecipes', JSON.stringify(this.recipes));
+                    
+                    // 重新渲染
+                    this.filterAndSortRecipes();
+                    this.updateStats();
+                    
+                    this.showNotification('配方已删除', 'success');
+                }
+            }
+            
+            viewRecipe(recipeId) {
+                const recipe = this.recipes.find(r => r.id === recipeId);
+                if (recipe) {
+                    sessionStorage.setItem('currentRecipe', JSON.stringify(recipe));
+                    window.location.href = 'recipe-detail.html?id=' + recipeId;
+                }
+            }
+            
+            updateStats() {
+                const totalRecipes = this.recipes.length;
+                document.getElementById('total-recipes').textContent = totalRecipes;
+                
+                if (totalRecipes === 0) {
+                    document.getElementById('favorite-mood').textContent = '-';
+                    document.getElementById('favorite-base').textContent = '-';
+                    document.getElementById('this-month').textContent = '0';
+                    return;
+                }
+                
+                // 计算最爱心情
+                const moodCount = {};
+                this.recipes.forEach(recipe => {
+                    moodCount[recipe.mood] = (moodCount[recipe.mood] || 0) + 1;
+                });
+                
+                const favoriteMood = Object.keys(moodCount).reduce((a, b) => 
+                    moodCount[a] > moodCount[b] ? a : b
+                );
+                
+                const moodInfo = this.getMoodInfo(favoriteMood);
+                document.getElementById('favorite-mood').textContent = moodInfo.name;
+                
+                // 计算常用基酒
+                const baseCount = {};
+                this.recipes.forEach(recipe => {
+                    const baseIngredient = recipe.ingredients.find(i => i.type === '基酒');
+                    if (baseIngredient) {
+                        baseCount[baseIngredient.name] = (baseCount[baseIngredient.name] || 0) + 1;
+                    }
+                });
+                
+                const favoriteBase = Object.keys(baseCount).reduce((a, b) => 
+                    baseCount[a] > baseCount[b] ? a : b
+                );
+                
+                document.getElementById('favorite-base').textContent = favoriteBase || '-';
+                
+                // 计算本月新增
+                const thisMonth = new Date().getMonth();
+                const thisYear = new Date().getFullYear();
+                const thisMonthRecipes = this.recipes.filter(recipe => {
+                    const recipeDate = new Date(recipe.createdAt);
+                    return recipeDate.getMonth() === thisMonth && recipeDate.getFullYear() === thisYear;
+                });
+                
+                document.getElementById('this-month').textContent = thisMonthRecipes.length;
+            }
+            
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                const bgColor = type === 'success' ? 'bg-green-600' : 
+                               type === 'warning' ? 'bg-yellow-600' : 'bg-blue-600';
+                
+                notification.className = `fixed top-20 right-4 p-4 rounded-lg shadow-lg z-50 ${bgColor} text-white`;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                anime({
+                    targets: notification,
+                    translateX: [300, 0],
+                    opacity: [0, 1],
+                    duration: 300,
+                    easing: 'easeOutQuad'
+                });
+                
+                setTimeout(() => {
+                    anime({
+                        targets: notification,
+                        translateX: [0, 300],
+                        opacity: [1, 0],
+                        duration: 300,
+                        easing: 'easeInQuad',
+                        complete: () => {
+                            document.body.removeChild(notification);
+                        }
+                    });
+                }, 3000);
+            }
+            
+            setupP5Background() {
+                // P5.js背景动画
+                new p5((p) => {
+                    let particles = [];
+                    
+                    p.setup = () => {
+                        const canvas = p.createCanvas(p.windowWidth, p.windowHeight);
+                        canvas.parent('p5-container');
+                        canvas.id('p5-canvas');
+                        
+                        for (let i = 0; i < 40; i++) {
+                            particles.push({
+                                x: p.random(p.width),
+                                y: p.random(p.height),
+                                vx: p.random(-0.4, 0.4),
+                                vy: p.random(-0.4, 0.4),
+                                size: p.random(2, 7),
+                                opacity: p.random(0.1, 0.25)
+                            });
+                        }
+                    };
+                    
+                    p.draw = () => {
+                        p.clear();
+                        
+                        particles.forEach(particle => {
+                            p.fill(212, 175, 55, particle.opacity * 255);
+                            p.noStroke();
+                            p.circle(particle.x, particle.y, particle.size);
+                            
+                            particle.x += particle.vx;
+                            particle.y += particle.vy;
+                            
+                            if (particle.x < 0 || particle.x > p.width) particle.vx *= -1;
+                            if (particle.y < 0 || particle.y > p.height) particle.vy *= -1;
+                        });
+                    };
+                    
+                    p.windowResized = () => {
+                        p.resizeCanvas(p.windowWidth, p.windowHeight);
+                    };
+                });
+            }
+        }
+        
+        // 初始化配方库
+        let recipeLibrary;
+        document.addEventListener('DOMContentLoaded', () => {
+            recipeLibrary = new RecipeLibrary();
+
+            // 导入JSON
+            document.getElementById('btn-import-json').addEventListener('click', () => {
+                document.getElementById('import-file-input').click();
+            });
+            document.getElementById('import-file-input').addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                try {
+                    const data = await RecipeToolkit.importFromFile(file);
+                    if (typeof apiClient !== 'undefined') {
+                        const resp = await apiClient.importRecipe(data);
+                        if (resp.success) {
+                            window.showNotification && window.showNotification('配方导入成功！', 'success');
+                            window.location.href = 'recipe-detail.html?id=' + resp.data.id;
+                        } else {
+                            alert(resp.message || '导入失败');
+                        }
+                    }
+                } catch (err) {
+                    alert(err.message || '导入失败');
+                }
+            });
+
+            // 导出全部
+            document.getElementById('btn-export-all').addEventListener('click', () => {
+                const recipes = JSON.parse(localStorage.getItem('cocktailRecipes') || '[]');
+                if (recipes.length === 0) {
+                    alert('没有可导出的配方');
+                    return;
+                }
+                if (typeof apiClient !== 'undefined') {
+                    apiClient.downloadJSON(recipes, 'all-recipes.json');
+                } else {
+                    const blob = new Blob([JSON.stringify(recipes, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'all-recipes.json';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

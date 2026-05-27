@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  # AI Agent 聊天助手
+  ai-agent:
+    build:
+      context: ./ai-agent
+      dockerfile: Dockerfile
+    container_name: cocktail-maker-ai-agent
+    restart: always
+    environment:
+      MODEL_TYPE: ${AI_MODEL_TYPE:-openai}
+      OPENAI_API_BASE: ${AI_OPENAI_API_BASE:-https://api.openai.com/v1}
+      OPENAI_CHAT_API_KEY: ${AI_OPENAI_API_KEY:-}
+      OPENAI_CHAT_MODEL: ${AI_OPENAI_CHAT_MODEL:-gpt-4o-mini}
+      ONEAPI_API_BASE: ${AI_ONEAPI_API_BASE:-http://localhost:3000/v1}
+      ONEAPI_CHAT_API_KEY: ${AI_ONEAPI_API_KEY:-}
+      ONEAPI_CHAT_MODEL: ${AI_ONEAPI_CHAT_MODEL:-qwen-max}
+      OLLAMA_API_BASE: ${AI_OLLAMA_API_BASE:-http://localhost:11434/v1}
+      OLLAMA_CHAT_API_KEY: ${AI_OLLAMA_API_KEY:-ollama}
+      OLLAMA_CHAT_MODEL: ${AI_OLLAMA_CHAT_MODEL:-llama3.1:latest}
+      BACKEND_API_URL: http://backend:8080/api
+    ports:
+      - "8001:8001"
+    depends_on:
+      - backend
+    networks:
+      - cocktail-network
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: cocktail-maker-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: cocktail_maker
+      MYSQL_USER: cocktail_user
+      MYSQL_PASSWORD: cocktail_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/database-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - cocktail-network
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: cocktail-maker-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass cocktail_redis_password
+    networks:
+      - cocktail-network
+
+  # Spring Boot 应用
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cocktail-maker-backend
+    restart: always
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: cocktail_maker
+      DB_USERNAME: cocktail_user
+      DB_PASSWORD: cocktail_password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: cocktail_redis_password
+      JWT_SECRET: cocktail-maker-jwt-secret-2024-change-in-production
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+      - redis
+    volumes:
+      - ./uploads:/app/uploads
+    networks:
+      - cocktail-network
+
+  # Nginx 反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: cocktail-maker-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./frontend:/var/www/html
+      - ./ssl:/etc/nginx/ssl
+      - ./uploads:/var/www/uploads
+    depends_on:
+      - backend
+    networks:
+      - cocktail-network
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  cocktail-network:
+    driver: bridge

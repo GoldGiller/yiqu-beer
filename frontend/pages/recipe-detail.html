@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>配方详情 - 调酒模拟器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div id="nav-container"></div>
+
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        <!-- 配方头部 -->
+        <div id="recipe-header" class="mb-8"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 左侧: 风味信息 + 食物搭配 -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- 风味指标 -->
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-semibold text-amber-300 mb-4">🍹 风味指标</h3>
+                    <div id="flavor-meters" class="space-y-4"></div>
+                </div>
+
+                <!-- 食物搭配 -->
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-semibold text-amber-300 mb-4">🍽️ 搭配小食</h3>
+                    <div id="food-pairings" class="space-y-3"></div>
+                </div>
+
+                <!-- 操作 -->
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-semibold text-amber-300 mb-4">⚡ 操作</h3>
+                    <div class="space-y-3">
+                        <button id="btn-like" class="w-full py-3 bg-amber-700/30 hover:bg-amber-600/50 border border-amber-600/30 rounded-lg transition text-sm">
+                            ❤️ <span id="like-text">点赞</span> (<span id="like-count">0</span>)
+                        </button>
+                        <button id="btn-favorite" class="w-full py-3 bg-amber-700/30 hover:bg-amber-600/50 border border-amber-600/30 rounded-lg transition text-sm">
+                            ⭐ 收藏 (<span id="favorite-count">0</span>)
+                        </button>
+                        <button id="btn-export" class="w-full py-3 bg-gray-700/30 hover:bg-gray-600/50 border border-gray-600/30 rounded-lg transition text-sm">
+                            📥 导出JSON
+                        </button>
+                        <button id="btn-save-version" class="w-full py-3 bg-amber-700/30 hover:bg-amber-600/50 border border-amber-600/30 rounded-lg transition text-sm">
+                            💾 保存版本快照
+                        </button>
+                        <label class="w-full py-3 bg-gray-700/30 hover:bg-gray-600/50 border border-gray-600/30 rounded-lg transition text-sm cursor-pointer text-center block">
+                            📷 上传成品照片
+                            <input type="file" id="image-upload" accept="image/*" class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 版本历史 -->
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-semibold text-amber-300 mb-4">📋 版本历史</h3>
+                    <div id="version-list"></div>
+                </div>
+            </div>
+
+            <!-- 右侧: Tab切换 (详情/步骤/评论) -->
+            <div class="lg:col-span-2">
+                <div class="flex gap-2 mb-6">
+                    <button class="tab-btn active px-6 py-2 rounded-lg text-sm transition" data-tab="detail">配方详情</button>
+                    <button class="tab-btn px-6 py-2 rounded-lg text-sm transition bg-gray-700/30" data-tab="steps">制作步骤</button>
+                    <button class="tab-btn px-6 py-2 rounded-lg text-sm transition bg-gray-700/30" data-tab="comments">评论互动</button>
+                </div>
+
+                <!-- 配方详情 -->
+                <div id="tab-detail" class="tab-content glass-card p-6">
+                    <div id="recipe-description"></div>
+                    <div id="recipe-ingredients"></div>
+                </div>
+
+                <!-- 制作步骤 -->
+                <div id="tab-steps" class="tab-content glass-card p-6 hidden">
+                    <div id="recipe-steps"></div>
+                </div>
+
+                <!-- 评论互动 -->
+                <div id="tab-comments" class="tab-content glass-card p-6 hidden">
+                    <h3 class="text-lg font-semibold text-amber-300 mb-4">💬 评论互动</h3>
+                    <div id="comment-form" class="mb-6">
+                        <textarea id="comment-input" rows="3" class="w-full bg-gray-800 border border-amber-700/30 rounded-lg p-3 text-sm text-gray-200 resize-none"
+                            placeholder="写下你的评论..."></textarea>
+                        <div class="flex justify-end mt-2">
+                            <button id="comment-submit" class="btn-primary px-6 py-2 rounded-lg text-sm">发布评论</button>
+                        </div>
+                    </div>
+                    <div id="comments-container"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../js/core/api-client.js"></script>
+    <script src="../js/features/comments.js"></script>
+    <script src="../js/features/recipe-toolkit.js"></script>
+    <script src="../js/ui/nav-bar.js"></script>
+    <script src="../js/ui/chat-widget.js"></script>
+    <script>
+    // 获取 URL 参数
+    const params = new URLSearchParams(window.location.search);
+    const recipeId = params.get('id');
+    const userId = apiClient.getCurrentUserId() || '1';
+
+    let recipeData = null;
+    let isLiked = false;
+    let isFavorited = false;
+
+    const commentSystem = new CommentSystem('comments-container', recipeId);
+    const toolkit = new RecipeToolkit(recipeId);
+
+    // 初始化
+    async function init() {
+        if (!recipeId) {
+            document.body.innerHTML = '<div class="text-center py-20 text-gray-400">未指定配方ID</div>';
+            return;
+        }
+
+        try {
+            const resp = await apiClient.getRecipe(recipeId);
+            if (resp.success) {
+                recipeData = resp.data;
+                isLiked = recipeData.isLiked || false;
+                isFavorited = recipeData.isFavorited || false;
+                renderRecipe(recipeData);
+                loadFoodPairings();
+                loadVersions();
+            }
+        } catch (e) {
+            document.getElementById('recipe-header').innerHTML = '<p class="text-red-400">加载配方失败</p>';
+        }
+
+        apiClient.recordInteraction(recipeId, 'VIEW');
+    }
+
+    function renderRecipe(data) {
+        // 头部
+        document.getElementById('recipe-header').innerHTML = `
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="flex-shrink-0 w-full md:w-64 h-48 glass-card overflow-hidden rounded-xl">
+                    ${data.imageUrl
+                        ? `<img src="${data.imageUrl}" alt="${data.name}" class="w-full h-full object-cover">`
+                        : `<div class="w-full h-full flex items-center justify-center text-6xl">🍸</div>`}
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold text-amber-200 mb-2">${data.name}</h1>
+                    <div class="flex items-center gap-4 text-sm text-gray-400 mb-3">
+                        <span>👁️ ${data.viewCount || 0} 浏览</span>
+                        <span>❤️ ${data.likeCount || 0} 点赞</span>
+                        <span>⭐ ${data.favoriteCount || 0} 收藏</span>
+                        <span>💬 ${data.commentCount || 0} 评论</span>
+                        ${data.mood ? `<span class="bg-amber-900/30 text-amber-400 px-3 py-1 rounded-full text-xs">心情: ${data.mood}</span>` : ''}
+                    </div>
+                </div>
+            </div>`;
+
+        // 风味条
+        const flavors = [
+            { label: '甜度', value: data.sweetness || 5 },
+            { label: '酸度', value: data.sourness || 5 },
+            { label: '酒精度', value: data.alcohol || 5 },
+            { label: '果味', value: data.fruitiness || 5 }
+        ];
+        document.getElementById('flavor-meters').innerHTML = flavors.map(f => `
+            <div>
+                <div class="flex justify-between text-sm mb-1">
+                    <span class="text-gray-300">${f.label}</span>
+                    <span class="text-amber-400">${f.value}/10</span>
+                </div>
+                <div class="flavor-bar"><div class="flavor-fill" style="width:${f.value * 10}%"></div></div>
+            </div>`).join('');
+
+        // 描述
+        document.getElementById('recipe-description').innerHTML = data.description
+            ? `<p class="text-gray-300 leading-relaxed">${data.description}</p>`
+            : '<p class="text-gray-500">暂无描述</p>';
+
+        // 材料列表
+        if (data.ingredients && data.ingredients.length > 0) {
+            document.getElementById('recipe-ingredients').innerHTML = `
+                <h3 class="text-lg font-semibold text-amber-300 mt-6 mb-3">🥃 材料清单</h3>
+                <div class="space-y-2">
+                    ${data.ingredients.map(ing => `
+                        <div class="flex items-center gap-3 glass-card p-3">
+                            <span class="text-xl">${ing.ingredient?.emoji || '🥄'}</span>
+                            <span class="flex-1 text-gray-200">${ing.ingredient?.name || '未知'}</span>
+                            <span class="text-amber-400 text-sm">${ing.amount || ''} ${ing.unit || 'ml'}</span>
+                            ${ing.notes ? `<span class="text-gray-500 text-xs">${ing.notes}</span>` : ''}
+                        </div>`).join('')}
+                </div>`;
+        }
+
+        // 制作步骤
+        if (data.steps && data.steps.length > 0) {
+            document.getElementById('recipe-steps').innerHTML = data.steps.map((step, i) => `
+                <div class="flex gap-4 mb-6">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full bg-amber-600/30 flex items-center justify-center text-amber-400 font-bold">
+                        ${i + 1}
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-gray-200">${step.description}</p>
+                        <div class="flex gap-4 mt-1 text-xs text-gray-500">
+                            ${step.durationSeconds ? `<span>⏱️ ${step.durationSeconds}秒</span>` : ''}
+                            ${step.temperature ? `<span>🌡️ ${step.temperature}</span>` : ''}
+                            ${step.technique ? `<span>🔧 ${step.technique}</span>` : ''}
+                        </div>
+                    </div>
+                </div>`).join('');
+        } else {
+            document.getElementById('recipe-steps').innerHTML = '<p class="text-gray-500">暂无制作步骤</p>';
+        }
+
+        // 按钮状态
+        updateButtonStates();
+    }
+
+    function updateButtonStates() {
+        document.getElementById('like-count').textContent = recipeData.likeCount || 0;
+        document.getElementById('favorite-count').textContent = recipeData.favoriteCount || 0;
+        document.getElementById('like-text').textContent = isLiked ? '已点赞' : '点赞';
+        document.getElementById('btn-like').style.borderColor = isLiked ? '#d4af37' : 'rgba(212,175,55,0.3)';
+    }
+
+    async function loadFoodPairings() {
+        try {
+            const resp = await apiClient.getFoodPairings(recipeId);
+            const container = document.getElementById('food-pairings');
+            if (resp.success && resp.data && resp.data.length > 0) {
+                container.innerHTML = resp.data.map(fp => `
+                    <div class="flex items-center gap-3 glass-card p-3">
+                        <span class="text-2xl">${fp.emoji || '🍽️'}</span>
+                        <div>
+                            <p class="text-gray-200 text-sm">${fp.name}</p>
+                            <p class="text-gray-500 text-xs">${fp.description || ''}</p>
+                        </div>
+                    </div>`).join('');
+            } else {
+                container.innerHTML = '<p class="text-gray-500 text-sm">暂无搭配推荐</p>';
+            }
+        } catch (e) {}
+    }
+
+    async function loadVersions() {
+        await toolkit.loadVersions('version-list');
+    }
+
+    // 按钮事件
+    document.getElementById('btn-like').addEventListener('click', async () => {
+        try {
+            if (isLiked) {
+                await apiClient.unlikeRecipe(recipeId);
+                apiClient.recordInteraction(recipeId, 'UNLIKE');
+            } else {
+                await apiClient.likeRecipe(recipeId);
+                apiClient.recordInteraction(recipeId, 'LIKE_RECIPE');
+            }
+            isLiked = !isLiked;
+            recipeData.likeCount += isLiked ? 1 : -1;
+            updateButtonStates();
+        } catch (e) {}
+    });
+
+    document.getElementById('btn-favorite').addEventListener('click', async () => {
+        try {
+            if (isFavorited) {
+                await apiClient.unfavoriteRecipe(recipeId);
+            } else {
+                await apiClient.favoriteRecipe(recipeId);
+                apiClient.recordInteraction(recipeId, 'FAVORITE_RECIPE');
+            }
+            isFavorited = !isFavorited;
+            recipeData.favoriteCount += isFavorited ? 1 : -1;
+            updateButtonStates();
+            alert(isFavorited ? '收藏成功！' : '已取消收藏');
+        } catch (e) {}
+    });
+
+    document.getElementById('btn-export').addEventListener('click', () => toolkit.exportJSON());
+
+    document.getElementById('btn-save-version').addEventListener('click', async () => {
+        const summary = prompt('请输入版本变更说明（可选）:');
+        try {
+            const resp = await apiClient.saveRecipeVersion(recipeId, summary || '');
+            if (resp.success) {
+                alert('版本保存成功！');
+                loadVersions();
+            }
+        } catch (e) { alert('保存失败'); }
+    });
+
+    document.getElementById('image-upload').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+            const resp = await apiClient.uploadRecipeImage(recipeId, file);
+            if (resp.success) {
+                alert('图片上传成功！');
+                location.reload();
+            } else {
+                alert(resp.message || '上传失败');
+            }
+        } catch (e) { alert('上传失败'); }
+    });
+
+    // Tab 切换
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.add('bg-gray-700/30');
+                b.classList.remove('active');
+            });
+            btn.classList.remove('bg-gray-700/30');
+            btn.classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            const tabId = 'tab-' + btn.dataset.tab;
+            document.getElementById(tabId).classList.remove('hidden');
+
+            if (btn.dataset.tab === 'comments') {
+                commentSystem.load();
+            }
+        });
+    });
+
+    // 初始化评论表单
+    initCommentForm(recipeId, () => commentSystem.load());
+
+    // 启动
+    init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+# 编译输出
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# Maven
+log/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+bin/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 日志
+logs/
+*.log
+
+# 临时文件
+*.tmp
+*.temp
+
+# 环境变量
+.env
+.env.local
+.env.production
+
+# 上传文件
+uploads/
+frontend/uploads/
+
+# 数据库
+*.db
+*.sqlite
+
+# 缓存
+.cache/
+.npm/
+node_modules/
+
+# 测试报告
+test-results/
+coverage/
+
+# 构建输出
+dist/
+build/
+out/
+
+# Spring Boot
+spring-boot-*.jar
+
+# 备份文件
+*.bak
+*.backup
+*.swp
+*.swo
+*~
+
+# 证书文件
+*.pem
+*.key
+*.crt
+*.cert
+
+# 敏感配置
+application-prod.yml
+application-production.yml

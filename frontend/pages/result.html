@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调酒结果 - 你的专属饮品</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <script src="../js/core/api-client.js"></script>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .cocktail-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+        }
+        .preference-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .preference-fill {
+            height: 100%;
+            background: linear-gradient(45deg, var(--accent-gold), var(--accent-copper));
+            border-radius: 4px;
+            transition: width 0.8s ease;
+        }
+    </style>
+</head>
+<body>
+    <!-- P5.js背景画布 -->
+    <div id="p5-container"></div>
+    
+    <div id="nav-container"></div>
+    
+    <!-- 主要内容 -->
+    <main class="pt-20 pb-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <!-- 饮品展示区域 -->
+            <div class="text-center mb-12">
+                <div class="floating-animation mb-6">
+                    <h1 id="cocktail-name" class="hero-title text-4xl md:text-6xl font-bold mb-4">
+                        加载中...
+                    </h1>
+                    <p id="cocktail-description" class="text-xl" style="color: var(--text-gold);">
+                        正在为你准备专属饮品...
+                    </p>
+                </div>
+                
+                <div class="glass-card p-6 mb-6 max-w-2xl mx-auto">
+                    <img id="cocktail-image" class="cocktail-image mx-auto mb-4" 
+                         src="../assets/images/cocktail-garnishes.png"alt="你的专属鸡尾酒">
+                    
+                    <div class="flex justify-center items-center space-x-4 mb-4">
+                        <div id="mood-display" class="mood-badge">
+                            心情加载中...
+                        </div>
+                        <div class="text-sm" style="color: var(--text-gold);">
+                            创建于 <span id="creation-date"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- 左侧：配方详情 -->
+                <div class="space-y-6">
+                    <!-- 材料清单 -->
+                    <div class="glass-card p-6">
+                        <h2 class="text-2xl font-bold mb-4 hero-title">材料清单</h2>
+                        <div id="ingredients-list">
+                            <!-- 动态生成材料列表 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 制作步骤 -->
+                    <div class="glass-card p-6">
+                        <h2 class="text-2xl font-bold mb-4 hero-title">制作步骤</h2>
+                        <div id="steps-list">
+                            <!-- 动态生成步骤列表 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 右侧：口味分析和操作 -->
+                <div class="space-y-6">
+                    <!-- 口味分析 -->
+                    <div class="glass-card p-6">
+                        <h2 class="text-2xl font-bold mb-4 hero-title">口味分析</h2>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm">甜度</span>
+                                    <span id="sweetness-display" class="text-sm" style="color: var(--accent-gold);">0</span>
+                                </div>
+                                <div class="preference-bar">
+                                    <div id="sweetness-bar" class="preference-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm">酸度</span>
+                                    <span id="sourness-display" class="text-sm" style="color: var(--accent-gold);">0</span>
+                                </div>
+                                <div class="preference-bar">
+                                    <div id="sourness-bar" class="preference-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm">酒精浓度</span>
+                                    <span id="alcohol-display" class="text-sm" style="color: var(--accent-gold);">0</span>
+                                </div>
+                                <div class="preference-bar">
+                                    <div id="alcohol-bar" class="preference-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm">果味强度</span>
+                                    <span id="fruitiness-display" class="text-sm" style="color: var(--accent-gold);">0</span>
+                                </div>
+                                <div class="preference-bar">
+                                    <div id="fruitiness-bar" class="preference-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 心情匹配说明 -->
+                    <div class="glass-card p-6">
+                        <h2 class="text-2xl font-bold mb-4 hero-title">心情匹配</h2>
+                        <div id="mood-explanation" class="text-sm leading-relaxed" style="color: var(--text-gold);">
+                            <!-- 动态生成心情说明 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 操作按钮 -->
+                    <div class="glass-card p-6">
+                        <h2 class="text-2xl font-bold mb-4 hero-title">操作</h2>
+                        <div class="space-y-3">
+                            <button id="save-recipe" class="action-button w-full py-3 px-6 rounded-lg" style="color: var(--primary-dark);">
+                                💾 保存配方
+                            </button>
+                            <button id="view-detail" class="action-button w-full py-3 px-6 rounded-lg" style="background: linear-gradient(45deg, var(--accent-gold), var(--accent-copper)); color: var(--primary-dark);">
+                                📋 查看详情与评论
+                            </button>
+                            <button id="share-recipe" class="action-button w-full py-3 px-6 rounded-lg" style="color: var(--primary-dark);">
+                                📤 分享饮品
+                            </button>
+                            <button id="mix-again" class="action-button w-full py-3 px-6 rounded-lg" style="color: var(--primary-dark);">
+                                🔄 重新调酒
+                            </button>
+                            <button id="back-home" class="action-button w-full py-3 px-6 rounded-lg" style="color: var(--primary-dark);">
+                                🏠 返回主页
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script src="../js/ui/nav-bar.js"></script>
+    <script src="../js/ui/chat-widget.js"></script>
+    <script>
+        // 结果页面逻辑
+        class ResultPage {
+            constructor() {
+                this.recipe = null;
+                this.init();
+            }
+            
+            init() {
+                this.loadRecipe();
+                this.setupEventListeners();
+                this.setupP5Background();
+                this.displayRecipe();
+            }
+            
+            loadRecipe() {
+                const recipeData = sessionStorage.getItem('currentRecipe');
+                if (recipeData) {
+                    this.recipe = JSON.parse(recipeData);
+                } else {
+                    // 如果没有配方数据，返回主页
+                    window.location.href = 'index.html';
+                }
+            }
+            
+            setupEventListeners() {
+                document.getElementById('save-recipe').addEventListener('click', () => {
+                    this.saveRecipe();
+                });
+
+                document.getElementById('view-detail').addEventListener('click', () => {
+                    if (this.savedRecipeId) {
+                        window.location.href = 'recipe-detail.html?id=' + this.savedRecipeId;
+                    } else if (this.recipe && this.recipe.id) {
+                        window.location.href = 'recipe-detail.html?id=' + this.recipe.id;
+                    } else {
+                        this.showNotification('请先保存配方', 'info');
+                    }
+                });
+                
+                document.getElementById('share-recipe').addEventListener('click', () => {
+                    this.shareRecipe();
+                });
+                
+                document.getElementById('mix-again').addEventListener('click', () => {
+                    window.location.href = 'index.html';
+                });
+                
+                document.getElementById('back-home').addEventListener('click', () => {
+                    window.location.href = 'index.html';
+                });
+            }
+            
+            displayRecipe() {
+                if (!this.recipe) return;
+                
+                // 显示基本信息
+                document.getElementById('cocktail-name').textContent = this.recipe.name;
+                document.getElementById('cocktail-description').textContent = this.recipe.description;
+                document.getElementById('cocktail-image').src = this.recipe.image;
+                document.getElementById('creation-date').textContent = new Date(this.recipe.createdAt).toLocaleDateString('zh-CN');
+                
+                // 显示心情
+                const moodInfo = this.getMoodInfo(this.recipe.mood);
+                document.getElementById('mood-display').textContent = moodInfo.name;
+                
+                // 显示材料列表
+                this.displayIngredients();
+                
+                // 显示制作步骤
+                this.displaySteps();
+                
+                // 显示口味分析
+                this.displayPreferences();
+                
+                // 显示心情说明
+                this.displayMoodExplanation();
+                
+                // 添加动画效果
+                this.addAnimations();
+            }
+            
+            displayIngredients() {
+                const container = document.getElementById('ingredients-list');
+                container.innerHTML = '';
+                
+                this.recipe.ingredients.forEach((ingredient, index) => {
+                    const ingredientDiv = document.createElement('div');
+                    ingredientDiv.className = 'ingredient-item';
+                    ingredientDiv.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-2xl">${ingredient.emoji}</span>
+                                <div>
+                                    <div class="font-medium">${ingredient.name}</div>
+                                    <div class="text-xs" style="color: var(--text-gold);">${ingredient.type}</div>
+                                </div>
+                            </div>
+                            <div class="text-sm font-medium" style="color: var(--accent-gold);">
+                                ${ingredient.amount}
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(ingredientDiv);
+                    
+                    // 添加延迟动画
+                    anime({
+                        targets: ingredientDiv,
+                        translateX: [-50, 0],
+                        opacity: [0, 1],
+                        duration: 600,
+                        delay: index * 100,
+                        easing: 'easeOutQuad'
+                    });
+                });
+            }
+            
+            displaySteps() {
+                const container = document.getElementById('steps-list');
+                container.innerHTML = '';
+                
+                this.recipe.steps.forEach((step, index) => {
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'step-item';
+                    stepDiv.innerHTML = `
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" 
+                                 style="background: var(--accent-gold); color: var(--primary-dark);">
+                                ${index + 1}
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm leading-relaxed">${step}</p>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(stepDiv);
+                    
+                    // 添加延迟动画
+                    anime({
+                        targets: stepDiv,
+                        translateX: [50, 0],
+                        opacity: [0, 1],
+                        duration: 600,
+                        delay: index * 150,
+                        easing: 'easeOutQuad'
+                    });
+                });
+            }
+            
+            displayPreferences() {
+                const preferences = this.recipe.preferences;
+                const maxValue = 10;
+                
+                // 更新数值显示
+                document.getElementById('sweetness-display').textContent = preferences.sweetness;
+                document.getElementById('sourness-display').textContent = preferences.sourness;
+                document.getElementById('alcohol-display').textContent = preferences.alcohol;
+                document.getElementById('fruitiness-display').textContent = preferences.fruitiness;
+                
+                // 更新进度条
+                setTimeout(() => {
+                    document.getElementById('sweetness-bar').style.width = `${(preferences.sweetness / maxValue) * 100}%`;
+                    document.getElementById('sourness-bar').style.width = `${(preferences.sourness / maxValue) * 100}%`;
+                    document.getElementById('alcohol-bar').style.width = `${(preferences.alcohol / maxValue) * 100}%`;
+                    document.getElementById('fruitiness-bar').style.width = `${(preferences.fruitiness / maxValue) * 100}%`;
+                }, 500);
+            }
+            
+            displayMoodExplanation() {
+                const moodInfo = this.getMoodInfo(this.recipe.mood);
+                const preferences = this.recipe.preferences;
+                
+                let explanation = `这款${moodInfo.name}主题的鸡尾酒`;
+                
+                // 根据心情和偏好生成说明
+                switch (this.recipe.mood) {
+                    case 'happy':
+                        explanation += '采用了明亮的柑橘类果汁和适量的糖分，营造出轻松愉快的口感。';
+                        break;
+                    case 'sad':
+                        explanation += '选择了温暖的基酒和舒缓的甜味，如同一个温暖的拥抱。';
+                        break;
+                    case 'excited':
+                        explanation += '加入了刺激性的成分和强烈的风味，让你的兴奋感倍增。';
+                        break;
+                    case 'romantic':
+                        explanation += '融合了甜美的果香和优雅的花香， perfect for romantic moments。';
+                        break;
+                    case 'tired':
+                        explanation += '选用了舒缓的香草和温和的配方，帮助放松身心。';
+                        break;
+                    case 'celebrating':
+                        explanation += '加入了奢华的气泡和金色装饰，为庆祝时刻增添光彩。';
+                        break;
+                }
+                
+                // 根据偏好补充说明
+                if (preferences.sweetness > 7) {
+                    explanation += '高甜度带来愉悦的满足感。';
+                }
+                if (preferences.sourness > 7) {
+                    explanation += '酸爽的口感让人精神一振。';
+                }
+                if (preferences.alcohol > 7) {
+                    explanation += '浓郁的酒精度适合想要深度放松的时刻。';
+                }
+                if (preferences.fruitiness > 7) {
+                    explanation += '丰富的果香让整杯酒充满活力。';
+                }
+                
+                document.getElementById('mood-explanation').textContent = explanation;
+            }
+            
+            getMoodInfo(mood) {
+                const moodMap = {
+                    happy: { emoji: '😊', name: '开心', description: '明亮欢快的口感' },
+                    sad: { emoji: '😔', name: '失落', description: '温暖治愈的味道' },
+                    excited: { emoji: '🎉', name: '兴奋', description: '充满活力的口感' },
+                    romantic: { emoji: '💕', name: '浪漫', description: '甜蜜迷人的味道' },
+                    tired: { emoji: '😴', name: '疲惫', description: '舒缓身心的口感' },
+                    celebrating: { emoji: '🥂', name: '庆祝', description: '奢华庆祝的味道' }
+                };
+                return moodMap[mood] || { emoji: '🍸', name: '未知', description: '未知的味道' };
+            }
+            
+            async saveRecipe() {
+                let savedRecipes = JSON.parse(localStorage.getItem('cocktailRecipes') || '[]');
+
+                // 检查是否已经保存
+                const exists = savedRecipes.some(recipe => recipe.id === this.recipe.id);
+                if (exists) {
+                    this.showNotification('配方已保存过了！', 'info');
+                    return;
+                }
+
+                savedRecipes.push(this.recipe);
+                localStorage.setItem('cocktailRecipes', JSON.stringify(savedRecipes));
+                this.showNotification('配方保存成功！', 'success');
+
+                // 尝试同步到后端
+                try {
+                    if (typeof apiClient !== 'undefined') {
+                        const resp = await apiClient.createRecipe(this.recipe);
+                        if (resp.success && resp.data && resp.data.id) {
+                            this.savedRecipeId = resp.data.id;
+                        }
+                    }
+                } catch(e) {}
+            }
+            
+            shareRecipe() {
+                if (navigator.share) {
+                    navigator.share({
+                        title: `我的专属饮品 - ${this.recipe.name}`,
+                        text: this.recipe.description,
+                        url: window.location.href
+                    }).catch(err => console.log('分享失败:', err));
+                } else {
+                    // 复制到剪贴板
+                    const shareText = `我刚调制了一款名为"${this.recipe.name}"的鸡尾酒！${this.recipe.description}`;
+                    navigator.clipboard.writeText(shareText).then(() => {
+                        this.showNotification('分享内容已复制到剪贴板！', 'success');
+                    });
+                }
+            }
+            
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                const bgColor = type === 'success' ? 'bg-green-600' : 
+                               type === 'warning' ? 'bg-yellow-600' : 'bg-blue-600';
+                
+                notification.className = `fixed top-20 right-4 p-4 rounded-lg shadow-lg z-50 ${bgColor} text-white`;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                anime({
+                    targets: notification,
+                    translateX: [300, 0],
+                    opacity: [0, 1],
+                    duration: 300,
+                    easing: 'easeOutQuad'
+                });
+                
+                setTimeout(() => {
+                    anime({
+                        targets: notification,
+                        translateX: [0, 300],
+                        opacity: [1, 0],
+                        duration: 300,
+                        easing: 'easeInQuad',
+                        complete: () => {
+                            document.body.removeChild(notification);
+                        }
+                    });
+                }, 3000);
+            }
+            
+            addAnimations() {
+                // 标题动画
+                anime({
+                    targets: '#cocktail-name',
+                    scale: [0.8, 1],
+                    opacity: [0, 1],
+                    duration: 1000,
+                    easing: 'easeOutElastic(1, .8)'
+                });
+                
+                // 图片动画
+                anime({
+                    targets: '#cocktail-image',
+                    scale: [0.9, 1],
+                    opacity: [0, 1],
+                    duration: 800,
+                    delay: 300,
+                    easing: 'easeOutQuad'
+                });
+            }
+            
+            setupP5Background() {
+                // P5.js背景动画
+                new p5((p) => {
+                    let particles = [];
+                    
+                    p.setup = () => {
+                        const canvas = p.createCanvas(p.windowWidth, p.windowHeight);
+                        canvas.parent('p5-container');
+                        canvas.id('p5-canvas');
+                        
+                        for (let i = 0; i < 30; i++) {
+                            particles.push({
+                                x: p.random(p.width),
+                                y: p.random(p.height),
+                                vx: p.random(-0.3, 0.3),
+                                vy: p.random(-0.3, 0.3),
+                                size: p.random(3, 8),
+                                opacity: p.random(0.1, 0.2)
+                            });
+                        }
+                    };
+                    
+                    p.draw = () => {
+                        p.clear();
+                        
+                        particles.forEach(particle => {
+                            p.fill(212, 175, 55, particle.opacity * 255);
+                            p.noStroke();
+                            p.circle(particle.x, particle.y, particle.size);
+                            
+                            particle.x += particle.vx;
+                            particle.y += particle.vy;
+                            
+                            if (particle.x < 0 || particle.x > p.width) particle.vx *= -1;
+                            if (particle.y < 0 || particle.y > p.height) particle.vy *= -1;
+                        });
+                    };
+                    
+                    p.windowResized = () => {
+                        p.resizeCanvas(p.windowWidth, p.windowHeight);
+                    };
+                });
+            }
+        }
+        
+        // 初始化结果页面
+        document.addEventListener('DOMContentLoaded', () => {
+            new ResultPage();
+        });
+    </script>
+</body>
+</html>
