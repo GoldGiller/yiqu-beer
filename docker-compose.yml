@@ -32,10 +32,10 @@ services:
     container_name: cocktail-maker-mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change_me}
       MYSQL_DATABASE: cocktail_maker
       MYSQL_USER: cocktail_user
-      MYSQL_PASSWORD: cocktail_password
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change_me}
     ports:
       - "3306:3306"
     volumes:
@@ -54,7 +54,7 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes --requirepass cocktail_redis_password
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-change_me}
     networks:
       - cocktail-network
 
@@ -71,11 +71,11 @@ services:
       DB_PORT: 3306
       DB_NAME: cocktail_maker
       DB_USERNAME: cocktail_user
-      DB_PASSWORD: cocktail_password
+      DB_PASSWORD: ${DB_PASSWORD:-change_me}
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_PASSWORD: cocktail_redis_password
-      JWT_SECRET: cocktail-maker-jwt-secret-2024-change-in-production
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me}
+      JWT_SECRET: ${JWT_SECRET:-change_me}
     ports:
       - "8080:8080"
     depends_on:
